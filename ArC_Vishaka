@@ -1,0 +1,113 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
+import 'package:image_picker/image_picker.dart';
+
+class AnimatedUI extends StatefulWidget {
+  @override
+  _AnimatedUIState createState() => _AnimatedUIState();
+}
+
+class _AnimatedUIState extends State<AnimatedUI>
+    with TickerProviderStateMixin {
+  // Animation controller for the text animation.
+  AnimationController? _textAnimationController;
+
+  // Animation controller for the Lottie animation.
+  AnimationController? _lottieAnimationController;
+
+  // File object for the captured image.
+  File? _imageFile;
+
+  // Initialize the animation controllers.
+  @override
+  void initState() {
+    super.initState();
+
+    _textAnimationController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 1),
+    );
+
+    _lottieAnimationController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 2),
+    );
+
+    // Start the text animation.
+    _textAnimationController!.forward();
+  }
+
+  // Dispose the animation controllers.
+  @override
+  void dispose() {
+    _textAnimationController!.dispose();
+    _lottieAnimationController!.dispose();
+
+    super.dispose();
+  }
+
+  // Open the camera and capture an image.
+  Future<void> openCamera() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.camera);
+
+    if (image != null) {
+      setState(() {
+        _imageFile = File(image.path);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Animated UI'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Animated text.
+            AnimatedBuilder(
+              animation: _textAnimationController!,
+              builder: (context, child) {
+                final double scale = _textAnimationController!.value;
+
+                return Transform.scale(
+                  scale: scale,
+                  child: Text(
+                    'Hello, world!',
+                    style: TextStyle(fontSize: 30),
+                  ),
+                );
+              },
+            ),
+
+            // Lottie animation.
+            Lottie.asset(
+              'assets/lottie_animation.json',
+              controller: _lottieAnimationController,
+              onLoaded: (composition) {
+                _lottieAnimationController!.duration = composition.duration;
+                _lottieAnimationController!.forward();
+              },
+            ),
+
+            // Button to access the camera.
+            ElevatedButton(
+              onPressed: openCamera,
+              child: Text('Open Camera'),
+            ),
+
+            // Display the captured image.
+            if (_imageFile != null)
+              Image.file(_imageFile!),
+          ],
+        ),
+      ),
+    );
+  }
