@@ -1,0 +1,124 @@
+import 'package:arcore_flutter/arcore_flutter.dart';
+
+// Create a new ArFragment class.
+class ArFragment extends StatelessWidget {
+
+  // Create a new ArSession variable.
+  final ArSession _arSession;
+
+  // Create a new Product variable.
+  final Product _product;
+
+  // Create a new ArFragment constructor.
+  const ArFragment({
+    Key? key,
+    required ArSession arSession,
+    required Product product,
+  }) : _arSession = arSession,
+       _product = product,
+       super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Return a new ArCoreView.
+    return ArCoreView(
+      // Set the ArSession to the _arSession variable.
+      arSession: _arSession,
+      // Call the onArCoreViewCreated() method when the ArCoreView is created.
+      onArCoreViewCreated: _onArCoreViewCreated,
+    );
+  }
+
+  // Create a new onArCoreViewCreated() method.
+  void _onArCoreViewCreated(ArCoreController arCoreController) {
+    // Start scanning for products.
+    arCoreController.setPlaneFindingMode(ArPlaneFindingMode.horizontal);
+
+    // Add a listener to the arCoreController.onPlaneDetected() event.
+    arCoreController.onPlaneDetected.listen((ArPlane plane) {
+      // Create a new ArPose anchor for the product.
+      final ArPose anchor = ArPose(plane.pose);
+
+      // Attach the product's 3D model to the anchor.
+      anchor.addChild(_product.model);
+
+      // Add the anchor to the AR scene.
+      _arSession.addAnchor(anchor);
+    });
+  }
+}
+
+// Create a new Product class.
+class Product {
+
+  // Create a new Model variable.
+  final Model model;
+
+  // Create a new ArPose variable.
+  final ArPose pose;
+
+  // Create a new Product constructor.
+  const Product({
+    required this.model,
+    required this.pose,
+  });
+
+  // Create a new track() method.
+  void track(ArFrame frame) {
+    // Track the product using the AR frame.
+    pose = frame.trackPose(pose);
+  }
+
+  // Create a new getModel() method.
+  Model getModel() {
+    return model;
+  }
+
+  // Create a new getPose() method.
+  ArPose getPose() {
+    return pose;
+  }
+}
+
+// Create a new main() method.
+void main() {
+  // Create a new ArSession.
+  final ArSession arSession = ArSession();
+
+  // Create a new Product.
+  final Product product = Product(
+    model: Model.loadModelFromAsset('assets/product_model.obj'),
+    pose: ArPose(new ArVector3(0, 0, 0), new ArQuaternion(0, 0, 0, 1)),
+  );
+
+  // Run the app.
+  runApp(MyApp(arSession: arSession, product: product));
+}
+
+// Create a new MyApp class.
+class MyApp extends StatelessWidget {
+
+  // Create a new ArSession variable.
+  final ArSession arSession;
+
+  // Create a new Product variable.
+  final Product product;
+
+  // Create a new MyApp constructor.
+  const MyApp({
+    Key? key,
+    required this.arSession,
+    required this.product,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Return a new MaterialApp.
+    return MaterialApp(
+      // Set the home property to a new ArFragment.
+      home: ArFragment(
+        arSession: arSession,
+        product: product,
+      ),
+    );
+  }
