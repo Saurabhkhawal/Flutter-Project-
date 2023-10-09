@@ -1,0 +1,88 @@
+import 'package:flutter/material.dart';
+import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
+
+class ArFragment extends StatefulWidget {
+  @override
+  _ArFragmentState createState() => _ArFragmentState();
+}
+
+class _ArFragmentState extends State<ArFragment> {
+  ArCoreController _arCoreController;
+  Product _product;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Create a new ArCoreController.
+    _arCoreController = ArCoreController();
+
+    // Create a new Product.
+    _product = Product(
+      model: Model.loadModelFromAsset('assets/product_model.obj'),
+      pose: ArPose(new ArVector3(0, 0, 0), new ArQuaternion(0, 0, 0, 1)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ArCoreView(
+      arCoreController: _arCoreController,
+      onArCoreViewCreated: _onArCoreViewCreated,
+    );
+  }
+
+  void _onArCoreViewCreated(ArCoreController arCoreController) {
+    // Start scanning for products.
+    arCoreController.setPlaneFindingMode(ArPlaneFindingMode.horizontal);
+
+    // Add a listener to the arCoreController.onPlaneDetected() event.
+    arCoreController.onPlaneDetected.listen((ArPlane plane) {
+      // Create a new ArPose anchor for the product.
+      final ArPose anchor = ArPose(plane.pose);
+
+      // Attach the product's 3D model to the anchor.
+      anchor.addChild(_product.model);
+
+      // Add the anchor to the AR scene.
+      arCoreController.addAnchor(anchor);
+    });
+  }
+}
+
+class Product {
+  final Model model;
+  final ArPose pose;
+
+  Product({
+    required this.model,
+    required this.pose,
+  });
+
+  void track(ArFrame frame) {
+    // Track the product using the AR frame.
+    pose = frame.trackPose(pose);
+  }
+
+  Model getModel() {
+    return model;
+  }
+
+  ArPose getPose() {
+    return pose;
+  }
+}
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: ArFragment(),
+      ),
+    );
+  }
