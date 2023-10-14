@@ -1,0 +1,29 @@
+import 'package:flutter/material.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart'; // For joining paths
+
+class ImageDatabase {
+  static Database? _db;
+
+  // Initialize database
+  static Future<void> init() async {
+    var databasePath = await getDatabasesPath();
+    String path = join(databasePath, 'image_database.db');
+    _db = await openDatabase(path, version: 1, onCreate: _createDb);
+  }
+
+  // Create database tables
+  static void _createDb(Database db, int version) async {
+    await db.execute('CREATE TABLE images (id INTEGER PRIMARY KEY, path TEXT, imageString TEXT)');
+  }
+
+  // Insert image data
+  static Future<void> insertImage(String path, String imageString) async {
+    await _db!.insert('images', {'path': path, 'imageString': imageString});
+  }
+
+  // Retrieve image data
+  static Future<List<Map<String, dynamic>>> getImages() async {
+    return await _db!.query('images');
+  }
+}
